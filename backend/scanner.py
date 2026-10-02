@@ -1,5 +1,6 @@
 import os
 import sys
+from sentence_transformers import SentenceTransformer
 
 IGNORED_DIRS = {".git", "node_modules", "venv", "__pycache__", "dist", "build"}
 
@@ -84,6 +85,24 @@ def scan_repository(repo_path):
         print(f"Content preview:\n{preview}")
 
     print(f"\nTotal chunks created: {len(all_chunks)}")
+
+    if all_chunks:
+        model = SentenceTransformer("all-MiniLM-L6-v2")
+        contents = [chunk["content"] for chunk in all_chunks]
+        embeddings = model.encode(contents)
+
+        for chunk, emb in zip(all_chunks, embeddings):
+            chunk["embedding"] = emb
+
+        dimensions = len(all_chunks[0]["embedding"])
+
+        print("\n--- Embedding Summary ---")
+        print(f"\nTotal chunks: {len(all_chunks)}")
+        print(f"Embedding dimensions: {dimensions}")
+        print("\nFirst chunk:")
+        print(f"File: {all_chunks[0]['file_path']}")
+        print(f"Chunk: {all_chunks[0]['chunk_number']}")
+        print(f"Embedding length: {len(all_chunks[0]['embedding'])}")
 
 if __name__ == "__main__":
     target_path = sys.argv[1] if len(sys.argv) > 1 else "."
